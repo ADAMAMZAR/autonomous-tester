@@ -1,0 +1,115 @@
+/* Mission History App Styles */
+
+.app {
+  min-height: 100vh;
+  background: var(--bg-primary);
+}
+
+.main-content {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 2rem 2rem 4rem;
+}
+
+.content-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 2rem;
+  gap: 2rem;
+}
+
+.page-title-section {
+  flex: 1;
+}
+
+.page-title {
+  font-size: 2.5rem;
+  font-weight: 700;
+  margin: 0 0 0.5rem 0;
+  color: var(--text-primary);
+  letter-spacing: -0.02em;
+}
+
+.page-subtitle {
+  font-size: 0.95rem;
+  color: var(--text-secondary);
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* Mission Table */
+.mission-table-container {
+  background: var(--bg-secondary);
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid var(--border-color);
+  margin-bottom: 1.5rem;
+}
+
+.mission-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.mission-table thead {
+  background: var(--bg-tertiary);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.mission-table th {
+  padding: 1rem 1.5rem;
+  text-align: left;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.th-id {
+  width: 80px;
+}
+
+.th-objective {
+  width: auto;
+}
+
+.th-status {
+  width: 150px;
+}
+
+.th-date {
+  width: 200px;
+}
+
+.th-actions {
+  width: 150px;
+  text-align: right;
+}
+
+/* Responsive adjustments */
+@media (max-width: 1024px) {
+  .content-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .main-content {
+    padding: 1.5rem 1rem 3rem;
+  }
+
+  .page-title {
+    font-size: 2rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .mission-table-container {
+    overflow-x: auto;
+  }
+
+  .mission-table {
+    min-width: 800px;
+  }
+}
