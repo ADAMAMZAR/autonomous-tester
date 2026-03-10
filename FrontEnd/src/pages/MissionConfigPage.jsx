@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { io } from 'socket.io-client';
 import Header from '../components/Header';
 import DeviceSelector from '../components/DeviceSelector';
 import TerminalPanel from '../components/TerminalPanel';
@@ -11,7 +11,6 @@ import './MissionConfigPage.css';
  * Mission configuration page for setting up new agent deployments.
  */
 const MissionConfigPage = () => {
-  const navigate = useNavigate();
   
   // Form state
   const [targetUrl, setTargetUrl] = useState('');
@@ -25,6 +24,19 @@ const MissionConfigPage = () => {
   
   // Terminal logs state
   const [logs, setLogs] = useState([]);
+
+  // Socket connection
+  useEffect(() => {
+    const socket = io('http://localhost:3001');
+
+    socket.on('agent_log', (newLog) => {
+      setLogs((prevLogs) => [...prevLogs, newLog]);
+    });
+
+    return () => {
+      socket.disconnect();
+    };
+  }, []);
 
   // Handle device type change
   const handleDeviceTypeChange = (newType) => {
@@ -42,7 +54,9 @@ const MissionConfigPage = () => {
   };
 
   // Handle deploy agent
-  const handleDeploy = () => {
+  const handleDeploy = async () => {
+    setLogs([]); // Clear previous logs
+    
     console.log('Deploying agent with config:', {
       targetUrl,
       objective,
@@ -52,20 +66,35 @@ const MissionConfigPage = () => {
       height
     });
 
-    // Add sample logs
-    const timestamp = new Date().toLocaleTimeString('en-US', { hour12: false });
-    const newLogs = [
-      { timestamp, type: 'THOUGHT', message: `Target URL received. Initializing headless browser environment for ${deviceType} emulation.` },
-      { timestamp, type: 'ACTION', message: `Navigate to https://${targetUrl || 'example.com'}/pricing` },
-      { timestamp, type: 'LOG', message: `DOM Content Loaded (3.4s). All assets ready.` },
-      { timestamp, type: 'THOUGHT', message: `Scanning page for mission objective: "${objective || 'Enterprise plan identification'}". Elements detected: 3 pricing cards.` },
-      { timestamp, type: 'ACTION', message: `Scroll to coordinates (0, 840)` },
-      { timestamp, type: 'ACTION', message: `Click Element [.btn-contact]` },
-      { timestamp, type: 'SYSTEM', message: 'UNEXPECTED BEHAVIOR DETECTED. CLICK REGISTERED BUT DOM UNCHANGED.' },
-      { timestamp, type: 'LOG', message: `AI Agent state: Analyzing failure...` }
-    ];
-    
-    setLogs(newLogs);
+    try {
+      const response = await fetch('http://localhost:3001/api/missions/deploy', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          url: targetUrl.startsWith('http') ? targetUrl : `https://${targetUrl}`,
+          objective,
+          width: parseInt(width),
+          height: parseInt(height)
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to deploy agent');
+      }
+
+      const data = await response.json();
+      console.log('Deployment response:', data);
+    } catch (error) {
+      console.error('Error deploying agent:', error);
+      const timestamp = new Date().toLocaleTimeString('en-US', { hour12: false });
+      setLogs([{
+        timestamp,
+        type: 'SYSTEM',
+        message: `CONNECTION ERROR: Could not connect to backend. Please ensure the backend server is running on port 3001.`
+      }]);
+    }
   };
 
   return (
