@@ -10,7 +10,7 @@ import google.generativeai as genai
 class AbangAgent:
     def __init__(self, api_key, sio):
         genai.configure(api_key=api_key)
-        self.model = genai.GenerativeModel('gemini-1.5-flash')
+        self.model = genai.GenerativeModel('gemini-2.5-flash-lite')
         self.sio = sio
 
     async def log(self, log_type, message):
@@ -22,18 +22,27 @@ class AbangAgent:
             'message': message
         })
 
+    async def emit_screenshot(self, screenshot_base64):
+        await self.sio.emit('agent_screenshot', {
+            'data': screenshot_base64
+        })
+
     async def run(self, url, objective, width, height):
         await self.log('SYSTEM', f'Initializing Abang Agent for mission: {objective}')
         
         async with async_playwright() as p:
-            browser = await p.chromium.launch(headless=False)
-            context = await browser.new_context(viewport={'width': width, 'height': height})
+            # Running Headless since visual will be in terminal panel
+            browser = await p.chromium.launch(headless=True)
+            context = await browser.new_context(
+                viewport={'width': width, 'height': height},
+                user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
+            )
             page = await context.new_page()
 
             try:
                 await self.log('ACTION', f'Navigating to {url}')
-                await page.goto(url)
-                await page.wait_for_load_state('networkidle')
+                await page.goto(url, wait_until='domcontentloaded', timeout=60000)
+                await asyncio.sleep(2)
 
                 steps = 0
                 max_steps = 10
@@ -41,9 +50,12 @@ class AbangAgent:
                 while steps < max_steps:
                     steps += 1
                     
-                    # Take screenshot for AI analysis
+                    # Take screenshot for AI analysis and UI preview
                     screenshot_bytes = await page.screenshot(type='png')
                     screenshot_base64 = base64.b64encode(screenshot_bytes).decode('utf-8')
+                    
+                    # Emit screenshot to frontend
+                    await self.emit_screenshot(screenshot_base64)
                     
                     await self.log('THOUGHT', f'Analyzing page state... (Step {steps})')
                     

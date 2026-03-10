@@ -24,6 +24,7 @@ const MissionConfigPage = () => {
   
   // Terminal logs state
   const [logs, setLogs] = useState([]);
+  const [currentScreenshot, setCurrentScreenshot] = useState(null);
 
   // Socket connection
   useEffect(() => {
@@ -31,6 +32,10 @@ const MissionConfigPage = () => {
 
     socket.on('agent_log', (newLog) => {
       setLogs((prevLogs) => [...prevLogs, newLog]);
+    });
+
+    socket.on('agent_screenshot', (data) => {
+      setCurrentScreenshot(data.data);
     });
 
     return () => {
@@ -48,14 +53,15 @@ const MissionConfigPage = () => {
       setWidth(393);
       setHeight(852);
     } else {
-      setWidth(1920);
-      setHeight(1080);
+      setWidth(1280);
+      setHeight(720);
     }
   };
 
   // Handle deploy agent
   const handleDeploy = async () => {
     setLogs([]); // Clear previous logs
+    setCurrentScreenshot(null);
     
     console.log('Deploying agent with config:', {
       targetUrl,
@@ -178,7 +184,7 @@ const MissionConfigPage = () => {
 
         {/* Right Panel - Terminal */}
         <div className="terminal-container">
-          <TerminalPanel logs={logs} />
+          <TerminalPanel logs={logs} screenshot={currentScreenshot} />
         </div>
       </div>
     </div>
